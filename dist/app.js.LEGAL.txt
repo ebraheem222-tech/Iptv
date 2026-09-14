@@ -1,0 +1,68 @@
+Bundled license information:
+
+react/cjs/react.production.min.js:
+  /**
+   * @license React
+   * react.production.min.js
+   *
+   * Copyright (c) Facebook, Inc. and its affiliates.
+   *
+   * This source code is licensed under the MIT license found in the
+   * LICENSE file in the root directory of this source tree.
+   */
+
+scheduler/cjs/scheduler.production.min.js:
+  /**
+   * @license React
+   * scheduler.production.min.js
+   *
+   * Copyright (c) Facebook, Inc. and its affiliates.
+   *
+   * This source code is licensed under the MIT license found in the
+   * LICENSE file in the root directory of this source tree.
+   */
+
+react-dom/cjs/react-dom.production.min.js:
+  /**
+   * @license React
+   * react-dom.production.min.js
+   *
+   * Copyright (c) Facebook, Inc. and its affiliates.
+   *
+   * This source code is licensed under the MIT license found in the
+   * LICENSE file in the root directory of this source tree.
+   */
+
+lucide-react/dist/esm/shared/src/utils.js:
+lucide-react/dist/esm/defaultAttributes.js:
+lucide-react/dist/esm/Icon.js:
+lucide-react/dist/esm/createLucideIcon.js:
+lucide-react/dist/esm/icons/arrow-right.js:
+lucide-react/dist/esm/icons/check.js:
+lucide-react/dist/esm/icons/chevron-left.js:
+lucide-react/dist/esm/icons/chevron-right.js:
+lucide-react/dist/esm/icons/clapperboard.js:
+lucide-react/dist/esm/icons/fast-forward.js:
+lucide-react/dist/esm/icons/film.js:
+lucide-react/dist/esm/icons/heart.js:
+lucide-react/dist/esm/icons/house.js:
+lucide-react/dist/esm/icons/log-out.js:
+lucide-react/dist/esm/icons/monitor.js:
+lucide-react/dist/esm/icons/pause.js:
+lucide-react/dist/esm/icons/play.js:
+lucide-react/dist/esm/icons/plus.js:
+lucide-react/dist/esm/icons/radio.js:
+lucide-react/dist/esm/icons/refresh-cw.js:
+lucide-react/dist/esm/icons/rewind.js:
+lucide-react/dist/esm/icons/rotate-ccw.js:
+lucide-react/dist/esm/icons/search.js:
+lucide-react/dist/esm/icons/settings.js:
+lucide-react/dist/esm/icons/signal.js:
+lucide-react/dist/esm/icons/x.js:
+lucide-react/dist/esm/lucide-react.js:
+  /**
+   * @license lucide-react v0.468.0 - ISC
+   *
+   * This source code is licensed under the ISC license.
+   * See the LICENSE file in the root directory of this source tree.
+   */

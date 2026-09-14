@@ -1,0 +1,11 @@
+{
+  "id": "tv.nova.app.iptv",
+  "version": "1.0.0",
+  "vendor": "Nova TV",
+  "type": "web",
+  "main": "index.html",
+  "title": "Nova TV",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "requiredACG": []
+}

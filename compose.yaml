@@ -1,0 +1,18 @@
+services:
+  nova-tv:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      HOST: 0.0.0.0
+      DATA_DIR: /app/data
+      ALLOW_PRIVATE_PROVIDERS: "false"
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      VAULT_KEY: ${VAULT_KEY:-}
+    volumes:
+      - nova-data:/app/data
+
+volumes:
+  nova-data:
