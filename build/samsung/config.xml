@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="https://nova-tv.local/app" version="1.0.0" viewmodes="maximized">
+  <tizen:application id="N0vaTV0001.NovaTV" package="N0vaTV0001" required_version="5.5"/>
+  <content src="index.html"/>
+  <icon src="icon.png"/>
+  <name>Nova TV</name>
+  <description>Personal IPTV client for an existing subscription</description>
+  <access origin="*" subdomains="true"/>
+  <tizen:privilege name="http://tizen.org/privilege/internet"/>
+  <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
+  <tizen:privilege name="http://developer.samsung.com/privilege/drmplay"/>
+  <tizen:profile name="tv-samsung"/>
+  <tizen:setting screen-orientation="landscape" context-menu="disable" background-support="disable" encryption="disable" install-location="auto" hwkey-event="enable" pointing-device-support="enable"/>
+  <tizen:metadata key="http://samsung.com/tv/metadata/use.network" value="true"/>
+</widget>
