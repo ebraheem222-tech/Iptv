@@ -9,6 +9,7 @@ import { existsSync } from "node:fs";
 import { Vault } from "./vault.js";
 import { createSafeFetcher } from "./network.js";
 import { MediaProxy } from "./media.js";
+import { CaptionService } from "./captions.js";
 import { Artwork } from "./artwork.js";
 import { Provider } from "./provider.js";
 import { AppError } from "./errors.js";
@@ -66,6 +67,15 @@ export function createApp(config = {}) {
     fetcher,
     getSession: (id) => vault.getById(id),
   });
+  const captions =
+    config.captionService ||
+    new CaptionService({
+      media,
+      getSession: (id) => vault.getById(id),
+      tempRoot: config.captionTempRoot,
+      binaries: config.captionBinaries,
+      runProcess: config.captionRunProcess,
+    });
   const artwork = new Artwork({
     key: vault.key,
     media,
@@ -197,6 +207,7 @@ export function createApp(config = {}) {
     }),
   );
   app.delete("/api/session", (req, res) => {
+    captions.revoke(req.session.id);
     media.revoke(req.session.id);
     provider.forget(req.session.id);
     vault.delete(req.session.id);
@@ -249,11 +260,40 @@ export function createApp(config = {}) {
           .transform((v) => v?.toLowerCase()),
       })
       .parse(req.body);
+    const playback = req.session.profile.demo
+      ? demoPlay(media, req.session, input)
+      : provider.play(req.session, input);
+    if (!playback.live)
+      playback.captionsUrl = captions.issue(playback.url, req.session.id);
+    res.json(playback);
+  });
+  const captionParam = z.string().regex(/^[A-Za-z0-9_-]{16,128}$/);
+  const captionLoopback = (req) => {
+    const port = Number(req.socket.localPort);
+    if (!Number.isInteger(port) || port < 1 || port > 65535)
+      throw new AppError(503, "Captions are unavailable.");
+    return `http://127.0.0.1:${port}`;
+  };
+  app.get("/api/captions/:ticket", async (req, res) => {
+    const ticket = captionParam.parse(req.params.ticket);
     res.json(
-      req.session.profile.demo
-        ? demoPlay(media, req.session, input)
-        : provider.play(req.session, input),
+      await captions.list(ticket, req.session.id, captionLoopback(req)),
     );
+  });
+  app.get("/api/captions/:ticket/:trackId.vtt", async (req, res) => {
+    const ticket = captionParam.parse(req.params.ticket);
+    const trackId = captionParam.parse(req.params.trackId);
+    const body = await captions.vtt(
+      ticket,
+      trackId,
+      req.session.id,
+      captionLoopback(req),
+    );
+    res
+      .type("text/vtt")
+      .set("Content-Disposition", "inline")
+      .set("Cache-Control", "private, max-age=3600")
+      .send(body);
   });
   app.get("/api/preferences", (req, res) =>
     res.json(req.session.preferences || prefs()),
@@ -362,5 +402,6 @@ export function createApp(config = {}) {
               : "The request could not be completed. Please try again.",
       });
   });
+  app.locals.captionService = captions;
   return app;
 }

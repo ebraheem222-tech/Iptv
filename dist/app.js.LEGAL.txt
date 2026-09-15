@@ -38,6 +38,7 @@ lucide-react/dist/esm/defaultAttributes.js:
 lucide-react/dist/esm/Icon.js:
 lucide-react/dist/esm/createLucideIcon.js:
 lucide-react/dist/esm/icons/arrow-right.js:
+lucide-react/dist/esm/icons/captions.js:
 lucide-react/dist/esm/icons/check.js:
 lucide-react/dist/esm/icons/chevron-left.js:
 lucide-react/dist/esm/icons/chevron-right.js:
@@ -47,6 +48,8 @@ lucide-react/dist/esm/icons/film.js:
 lucide-react/dist/esm/icons/heart.js:
 lucide-react/dist/esm/icons/house.js:
 lucide-react/dist/esm/icons/log-out.js:
+lucide-react/dist/esm/icons/maximize.js:
+lucide-react/dist/esm/icons/minimize.js:
 lucide-react/dist/esm/icons/monitor.js:
 lucide-react/dist/esm/icons/pause.js:
 lucide-react/dist/esm/icons/play.js:
@@ -58,6 +61,8 @@ lucide-react/dist/esm/icons/rotate-ccw.js:
 lucide-react/dist/esm/icons/search.js:
 lucide-react/dist/esm/icons/settings.js:
 lucide-react/dist/esm/icons/signal.js:
+lucide-react/dist/esm/icons/volume-2.js:
+lucide-react/dist/esm/icons/volume-x.js:
 lucide-react/dist/esm/icons/x.js:
 lucide-react/dist/esm/lucide-react.js:
   /**

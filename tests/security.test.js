@@ -240,6 +240,42 @@ test("media proxy forwards Range and selected upstream response headers", async 
   assert.equal(denied.res.statusCode, 404);
 });
 
+test("media proxy marks playable responses for inline browser playback", async () => {
+  const media = new MediaProxy({
+    fetcher: async () =>
+      new Response("video", { headers: { "content-type": "video/mp4" } }),
+    getSession: () => ({ id: "s1" }),
+  });
+  const issued = media.issue("https://provider.test/movie.mp4", "s1");
+  const io = responseRecorder(issued.split("/")[2]);
+
+  await media.handle(io.req, io.res);
+
+  assert.equal(io.res.headers["content-disposition"], "inline");
+});
+
+test("media proxy describes an authorized ticket without exposing its provider URL", () => {
+  const media = new MediaProxy({
+    fetcher: async () => new Response("video"),
+    getSession: (id) => (id === "owner" ? { id } : null),
+  });
+  const issued = media.issue(
+    "https://paid-user:paid-pass@provider.test/movie.mkv?token=secret",
+    "owner",
+  );
+
+  const description = media.describe(issued, "owner");
+
+  assert.equal(description.mediaPath, issued);
+  assert.match(description.cacheKey, /^[a-f0-9]{64}$/);
+  assert.doesNotMatch(
+    JSON.stringify(description),
+    /paid-user|paid-pass|provider|secret/,
+  );
+  assert.equal(media.describe(issued, "another-session"), null);
+  assert.equal(media.describe("/media/forged/media.mkv", "owner"), null);
+});
+
 test("media proxy sanitizes upstream errors and marks tickets no-store", async () => {
   const media = new MediaProxy({
     fetcher: async () =>

@@ -209,3 +209,72 @@ test("Samsung media keys are idempotent and player cleanup restores screensaver"
     await page.evaluate(() => [window.avState, window.screensaver]),
   ).toEqual(["NONE", 1]);
 });
+
+test("Samsung AVPlay selects an available Arabic provider subtitle", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    window.avState = "NONE";
+    window.webapis = {
+      appcommon: { setScreenSaver: () => {} },
+      avplay: {
+        open: () => (window.avState = "IDLE"),
+        setDisplayRect: () => {},
+        setDisplayMethod: () => {},
+        setListener: () => {},
+        prepareAsync: (callback) => {
+          window.avState = "READY";
+          setTimeout(callback, 0);
+        },
+        play: () => (window.avState = "PLAYING"),
+        pause: () => (window.avState = "PAUSED"),
+        stop: () => (window.avState = "IDLE"),
+        close: () => (window.avState = "NONE"),
+        getState: () => window.avState,
+        getDuration: () => 60000,
+        getCurrentTime: () => 1000,
+        seekTo: () => {},
+        getTotalTrackInfo: () => [
+          {
+            type: "TEXT",
+            index: 3,
+            extra_info: JSON.stringify({
+              track_lang: "eng",
+              title: "English",
+            }),
+          },
+          {
+            type: "TEXT",
+            index: 4,
+            extra_info: JSON.stringify({
+              track_lang: "ara",
+              title: "Arabic",
+            }),
+          },
+        ],
+        setSelectTrack: (type, index) =>
+          (window.selectedSubtitle = [type, index]),
+        setSilentSubtitle: (silent) =>
+          (window.subtitleIsSilent = silent),
+      },
+    };
+  });
+  await page.route("**/api/captions/**", (route) =>
+    route.fulfill({ json: { tracks: [] } }),
+  );
+  await page.goto("/");
+  await page.getByRole("button", { name: "Explore demo" }).click();
+  await page.getByRole("button", { name: "Movies", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Open Big Buck Bunny", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Play now", exact: true }).click();
+
+  await expect
+    .poll(() => page.evaluate(() => window.selectedSubtitle))
+    .toEqual(["TEXT", 4]);
+  expect(await page.evaluate(() => window.subtitleIsSilent)).toBe(false);
+  await expect(
+    page.getByRole("button", { name: "Captions: العربية" }),
+  ).toBeVisible();
+});

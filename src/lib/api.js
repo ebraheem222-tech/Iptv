@@ -69,3 +69,32 @@ export async function api(path, method = "GET", body, signal) {
     signal?.removeEventListener("abort", abort);
   }
 }
+
+export async function apiText(path, signal) {
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  if (signal) {
+    if (signal.aborted) controller.abort();
+    else signal.addEventListener("abort", abort);
+  }
+  const timer = setTimeout(() => controller.abort(), 30000);
+  try {
+    const res = await fetch(base() + path, {
+      headers: { Authorization: "Bearer " + saved("nova.token") },
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(
+        data.error || `Captions could not be loaded (${res.status}).`,
+      );
+    }
+    return await res.text();
+  } catch (error) {
+    if (error.name === "AbortError") throw new Error("Request cancelled.");
+    throw error;
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", abort);
+  }
+}

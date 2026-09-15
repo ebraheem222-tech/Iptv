@@ -5,8 +5,10 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-let api, provider, root, base, upstream, token;
+let api, provider, root, base, upstream, token, captionService;
 const requests = [];
+const captionOwners = new Map();
+let captionCounter = 0;
 const listen = (server) =>
   new Promise((resolve) =>
     server.listen(0, "127.0.0.1", () =>
@@ -179,6 +181,45 @@ before(async () => {
     res.end(JSON.stringify(data));
   });
   upstream = await listen(provider);
+  captionService = {
+    issue(_mediaPath, sessionId) {
+      const ticket = `caption-ticket-${++captionCounter}`;
+      captionOwners.set(ticket, sessionId);
+      return `/api/captions/${ticket}`;
+    },
+    async list(ticket, sessionId) {
+      if (captionOwners.get(ticket) !== sessionId)
+        throw Object.assign(new Error("Captions not found."), { status: 404 });
+      return {
+        tracks: [
+          {
+            id: "arabic-caption-1",
+            language: "ara",
+            label: "Arabic",
+            title: "Arabic",
+            default: true,
+            forced: false,
+            source: "embedded",
+          },
+        ],
+      };
+    },
+    async vtt(ticket, trackId, sessionId) {
+      if (
+        captionOwners.get(ticket) !== sessionId ||
+        trackId !== "arabic-caption-1"
+      )
+        throw Object.assign(new Error("Captions not found."), { status: 404 });
+      return Buffer.from(
+        "WEBVTT\n\n00:00:00.000 --> 00:00:02.000\nمرحبا\n",
+      );
+    },
+    revoke(sessionId) {
+      for (const [ticket, owner] of captionOwners)
+        if (owner === sessionId) captionOwners.delete(ticket);
+    },
+    async close() {},
+  };
   const module = await import("../server/app.js").catch(() => ({}));
   assert.equal(
     typeof module.createApp,
@@ -186,7 +227,11 @@ before(async () => {
     "backend must expose a runnable application factory",
   );
   api = module
-    .createApp({ dataDir: root, allowPrivateProviders: true })
+    .createApp({
+      dataDir: root,
+      allowPrivateProviders: true,
+      captionService,
+    })
     .listen();
   await new Promise((resolve) =>
     api.listening ? resolve() : api.once("listening", resolve),
@@ -342,7 +387,11 @@ test("saved provider artwork survives an application restart without exposing cr
   await request("/api/preferences/favorite", { method: "PUT", body: { item } });
   await close(api);
   const { createApp } = await import("../server/app.js");
-  api = createApp({ dataDir: root, allowPrivateProviders: true }).listen();
+  api = createApp({
+    dataDir: root,
+    allowPrivateProviders: true,
+    captionService,
+  }).listen();
   await new Promise((resolve) =>
     api.listening ? resolve() : api.once("listening", resolve),
   );
@@ -376,6 +425,58 @@ test("play uses opaque tickets and rewrites HLS without leaking credentials", as
     ).status,
     400,
   );
+});
+test("movie and episode playback expose only authenticated provider captions", async () => {
+  const play = await request("/api/play", {
+    method: "POST",
+    body: { kind: "movie", id: "20", extension: "mp4" },
+  });
+  assert.equal(play.status, 200);
+  assert.match(play.data.captionsUrl, /^\/api\/captions\/caption-ticket-/);
+  assert.equal(
+    (await request(play.data.captionsUrl, { auth: "" })).status,
+    401,
+  );
+  const tracks = await request(play.data.captionsUrl);
+  assert.equal(tracks.status, 200);
+  assert.equal(tracks.data.tracks[0].language, "ara");
+
+  const vtt = await fetch(
+    base + play.data.captionsUrl + "/arabic-caption-1.vtt",
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  assert.equal(vtt.status, 200);
+  assert.match(vtt.headers.get("content-type"), /^text\/vtt/);
+  assert.equal(vtt.headers.get("content-disposition"), "inline");
+  assert.match(await vtt.text(), /مرحبا/);
+
+  const episode = await request("/api/play", {
+    method: "POST",
+    body: { kind: "episode", id: "302", extension: "mkv" },
+  });
+  assert.equal(episode.status, 200);
+  assert.match(
+    episode.data.captionsUrl,
+    /^\/api\/captions\/caption-ticket-/,
+  );
+
+  const other = await request("/api/demo", { method: "POST", auth: "" });
+  assert.equal(
+    (
+      await request(play.data.captionsUrl, {
+        auth: other.data.token,
+      })
+    ).status,
+    404,
+  );
+});
+test("live playback does not create a caption extraction stream", async () => {
+  const play = await request("/api/play", {
+    method: "POST",
+    body: { kind: "live", id: "10" },
+  });
+  assert.equal(play.status, 200);
+  assert.equal(play.data.captionsUrl, undefined);
 });
 test("movie proxy forwards partial content and logout invalidates playback", async () => {
   const play = await request("/api/play", {
